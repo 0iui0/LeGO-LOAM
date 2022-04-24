@@ -10,7 +10,7 @@
 
 #include "cloud_msgs/cloud_info.h"
 
-#include <opencv/cv.h>
+#include <opencv2/opencv.hpp>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -150,13 +150,13 @@ struct by_value{
 /*
     * A point cloud type that has "ring" channel
     */
-struct PointXYZIR
+struct EIGEN_ALIGN16 PointXYZIR
 {
     PCL_ADD_POINT4D
     PCL_ADD_INTENSITY;
     uint16_t ring;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-} EIGEN_ALIGN16;
+};
 
 POINT_CLOUD_REGISTER_POINT_STRUCT (PointXYZIR,  
                                    (float, x, x) (float, y, y)
@@ -167,7 +167,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (PointXYZIR,
 /*
     * A point cloud type that has 6D pose info ([x,y,z,roll,pitch,yaw] intensity is time stamp)
     */
-struct PointXYZIRPYT
+struct EIGEN_ALIGN16 PointXYZIRPYT
 {
     PCL_ADD_POINT4D
     PCL_ADD_INTENSITY;
@@ -176,7 +176,7 @@ struct PointXYZIRPYT
     float yaw;
     double time;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-} EIGEN_ALIGN16;
+};
 
 POINT_CLOUD_REGISTER_POINT_STRUCT (PointXYZIRPYT,
                                    (float, x, x) (float, y, y)
