@@ -618,6 +618,7 @@ public:
         imuPointerLastIteration = imuPointerLast;
     }
 
+    // 计算平滑度和LOAM不一样
     void calculateSmoothness()
     {
         int cloudSize = segmentedCloud->points.size();
