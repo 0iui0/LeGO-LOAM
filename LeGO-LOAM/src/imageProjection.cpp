@@ -208,10 +208,13 @@ public:
         segMsg.orientationDiff = segMsg.endOrientation - segMsg.startOrientation;
     }
 
+    // 点云投影到图像 1800*16
     void projectPointCloud(){
         // range image projection
+        // 竖直角度、水平角度、距离
         float verticalAngle, horizonAngle, range;
-        size_t rowIdn, columnIdn, index, cloudSize; 
+        // 竖直第几根线、水平第几列
+        size_t rowIdn, columnIdn, index, cloudSize;
         PointType thisPoint;
 
         cloudSize = laserCloudIn->points.size();
@@ -257,8 +260,11 @@ public:
     }
 
 
+    // 选出地面点
     void groundRemoval(){
+        // 上线点索引、下线点索引
         size_t lowerInd, upperInd;
+        // 上下激光线上的点的dx dy dz差、连线和XY平面的夹角
         float diffX, diffY, diffZ, angle;
         // groundMat
         // -1, no valid info to check if ground of not
@@ -283,6 +289,7 @@ public:
 
                 angle = atan2(diffZ, sqrt(diffX*diffX + diffY*diffY) ) * 180 / M_PI;
 
+                // 俯仰角和安装角度差小于10，则认为是地面点
                 if (abs(angle - sensorMountAngle) <= 10){
                     groundMat.at<int8_t>(i,j) = 1;
                     groundMat.at<int8_t>(i+1,j) = 1;
@@ -367,6 +374,7 @@ public:
         }
     }
 
+    // 非地面点使用BFS聚类
     void labelComponents(int row, int col){
         // use std::queue std::vector std::deque will slow the program down greatly
         float d1, d2, alpha, angle;
@@ -382,7 +390,7 @@ public:
         allPushedIndX[0] = row;
         allPushedIndY[0] = col;
         int allPushedIndSize = 1;
-        
+        // 以(row,col)为中心，BFS聚类
         while(queueSize > 0){
             // Pop point
             fromIndX = queueIndX[queueStartInd];
@@ -437,8 +445,9 @@ public:
             }
         }
 
-        // check if this segment is valid
+        // 1。check if this segment is valid
         bool feasibleSegment = false;
+        // 1.1。总的聚类点数大于30
         if (allPushedIndSize >= 30)
             feasibleSegment = true;
         else if (allPushedIndSize >= segmentValidPointNum){
@@ -446,10 +455,11 @@ public:
             for (size_t i = 0; i < N_SCAN; ++i)
                 if (lineCountFlag[i] == true)
                     ++lineCount;
+            // 1.2。竖直放下的聚类点数大于等于3
             if (lineCount >= segmentValidLineNum)
                 feasibleSegment = true;            
         }
-        // segment is valid, mark these points
+        // 2。segment is valid, mark these points
         if (feasibleSegment == true){
             ++labelCount;
         }else{ // segment is invalid, mark these points
