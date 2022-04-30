@@ -208,10 +208,10 @@ public:
         segMsg.orientationDiff = segMsg.endOrientation - segMsg.startOrientation;
     }
 
-    // 点云投影到图像 1800*16
+    // 点云投影到图像 1800*16; 柱面--->平面：类似mercator方法投影世界地图
     void projectPointCloud(){
         // range image projection
-        // 竖直角度、水平角度、距离
+        // 竖直角度、水平角度、距离 --类似-->（经度、维度、高度）
         float verticalAngle, horizonAngle, range;
         // 竖直第几根线、水平第几列
         size_t rowIdn, columnIdn, index, cloudSize;
@@ -237,6 +237,7 @@ public:
 
             horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;
 
+            // 计算横坐标
             columnIdn = -round((horizonAngle-90.0)/ang_res_x) + Horizon_SCAN/2;
             if (columnIdn >= Horizon_SCAN)
                 columnIdn -= Horizon_SCAN;
@@ -244,14 +245,18 @@ public:
             if (columnIdn < 0 || columnIdn >= Horizon_SCAN)
                 continue;
 
+            // 计算距离，小于sensorMinimumRange则过滤掉；通常用于过滤自身形成的点云
             range = sqrt(thisPoint.x * thisPoint.x + thisPoint.y * thisPoint.y + thisPoint.z * thisPoint.z);
             if (range < sensorMinimumRange)
                 continue;
-            
+
+            // 保持距离到rangeMat
             rangeMat.at<float>(rowIdn, columnIdn) = range;
 
+            // 用于保存横纵坐标
             thisPoint.intensity = (float)rowIdn + (float)columnIdn / 10000.0;
 
+            // 点云保存到数组，fullCloud的强度为横纵坐标；fullInfoCloud为距离
             index = columnIdn  + rowIdn * Horizon_SCAN;
             fullCloud->points[index] = thisPoint;
             fullInfoCloud->points[index] = thisPoint;
@@ -299,6 +304,7 @@ public:
         // extract ground cloud (groundMat == 1)
         // mark entry that doesn't need to label (ground and invalid point) for segmentation
         // note that ground remove is from 0~N_SCAN-1, need rangeMat for mark label matrix for the 16th scan
+        // rangeMat为空则标记为-1，后面要移除
         for (size_t i = 0; i < N_SCAN; ++i){
             for (size_t j = 0; j < Horizon_SCAN; ++j){
                 if (groundMat.at<int8_t>(i,j) == 1 || rangeMat.at<float>(i,j) == FLT_MAX){
@@ -341,6 +347,7 @@ public:
                         }
                     }
                     // majority of ground points are skipped
+                    // 是地面点且索引号不是5的倍数的跳过
                     if (groundMat.at<int8_t>(i,j) == 1){
                         if (j%5!=0 && j>5 && j<Horizon_SCAN-5)
                             continue;
@@ -362,6 +369,7 @@ public:
         }
         
         // extract segmented cloud for visualization
+        // 分割后的点云，不包含地面点
         if (pubSegmentedCloudPure.getNumSubscribers() != 0){
             for (size_t i = 0; i < N_SCAN; ++i){
                 for (size_t j = 0; j < Horizon_SCAN; ++j){
@@ -374,9 +382,10 @@ public:
         }
     }
 
-    // 非地面点使用BFS聚类
+    // 非地面点使用BFS聚类，夹角大于60度认为是同一个物体
     void labelComponents(int row, int col){
         // use std::queue std::vector std::deque will slow the program down greatly
+        // OA、OB、<OA,OB>、<AO,AB>
         float d1, d2, alpha, angle;
         int fromIndX, fromIndY, thisIndX, thisIndY; 
         bool lineCountFlag[N_SCAN] = {false};
@@ -390,7 +399,7 @@ public:
         allPushedIndX[0] = row;
         allPushedIndY[0] = col;
         int allPushedIndSize = 1;
-        // 以(row,col)为中心，BFS聚类
+        // 以(row,col)为中心，长度为1，BFS聚类
         while(queueSize > 0){
             // Pop point
             fromIndX = queueIndX[queueStartInd];
@@ -400,6 +409,7 @@ public:
             // Mark popped point
             labelMat.at<int>(fromIndX, fromIndY) = labelCount;
             // Loop through all the neighboring grids of popped grid
+            // 遍历前后左右4个点，计算角度差
             for (auto iter = neighborIterator.begin(); iter != neighborIterator.end(); ++iter){
                 // new index
                 thisIndX = fromIndX + (*iter).first;
@@ -428,6 +438,7 @@ public:
 
                 angle = atan2(d2*sin(alpha), (d1 -d2*cos(alpha)));
 
+                // 角OAB>60度，则认为A、B属于同一个物体
                 if (angle > segmentTheta){
 
                     queueIndX[queueEndInd] = thisIndX;
@@ -477,37 +488,38 @@ public:
         // 2. Publish clouds
         sensor_msgs::PointCloud2 laserCloudTemp;
 
+        // 离群点云
         pcl::toROSMsg(*outlierCloud, laserCloudTemp);
         laserCloudTemp.header.stamp = cloudHeader.stamp;
         laserCloudTemp.header.frame_id = "base_link";
         pubOutlierCloud.publish(laserCloudTemp);
-        // segmented cloud with ground
+        // segmented cloud with ground （包含采样后的地面和分割后的点云）
         pcl::toROSMsg(*segmentedCloud, laserCloudTemp);
         laserCloudTemp.header.stamp = cloudHeader.stamp;
         laserCloudTemp.header.frame_id = "base_link";
         pubSegmentedCloud.publish(laserCloudTemp);
-        // projected full cloud
+        // projected full cloud（一开始投影到图像的点云）
         if (pubFullCloud.getNumSubscribers() != 0){
             pcl::toROSMsg(*fullCloud, laserCloudTemp);
             laserCloudTemp.header.stamp = cloudHeader.stamp;
             laserCloudTemp.header.frame_id = "base_link";
             pubFullCloud.publish(laserCloudTemp);
         }
-        // original dense ground cloud
+        // original dense ground cloud （地面点云）
         if (pubGroundCloud.getNumSubscribers() != 0){
             pcl::toROSMsg(*groundCloud, laserCloudTemp);
             laserCloudTemp.header.stamp = cloudHeader.stamp;
             laserCloudTemp.header.frame_id = "base_link";
             pubGroundCloud.publish(laserCloudTemp);
         }
-        // segmented cloud without ground
+        // segmented cloud without ground （分割后的点云，不包含地面）
         if (pubSegmentedCloudPure.getNumSubscribers() != 0){
             pcl::toROSMsg(*segmentedCloudPure, laserCloudTemp);
             laserCloudTemp.header.stamp = cloudHeader.stamp;
             laserCloudTemp.header.frame_id = "base_link";
             pubSegmentedCloudPure.publish(laserCloudTemp);
         }
-        // projected full cloud info
+        // projected full cloud info （rangeimage 投影后的点云）
         if (pubFullInfoCloud.getNumSubscribers() != 0){
             pcl::toROSMsg(*fullInfoCloud, laserCloudTemp);
             laserCloudTemp.header.stamp = cloudHeader.stamp;
