@@ -40,8 +40,11 @@ private:
 
 	ros::NodeHandle nh;
 
+    // 分割好的点云，强度是range image的行列信息
     ros::Subscriber subLaserCloud;
+    // 分割好的点云，强度是距离
     ros::Subscriber subLaserCloudInfo;
+    // 离群点，也就是分割失败的点
     ros::Subscriber subOutlierCloud;
     ros::Subscriber subImu;
 
@@ -147,8 +150,11 @@ private:
     float *pointSearchCornerInd2;
 
     int *pointSelSurfInd;
+    // j
     float *pointSearchSurfInd1;
+    // l
     float *pointSearchSurfInd2;
+    // m
     float *pointSearchSurfInd3;
 
     float transformCur[6];
@@ -389,6 +395,7 @@ public:
         p->z = z5 + imuShiftFromStartZCur;
     }
 
+    // 位置、速度、角度积分，分别计算出当前的位置、速度、角度
     void AccumulateIMUShiftAndRotation()
     {
         float roll = imuRoll[imuPointerLast];
@@ -414,20 +421,24 @@ public:
         double timeDiff = imuTime[imuPointerLast] - imuTime[imuPointerBack];
         if (timeDiff < scanPeriod) {
 
+            // 位置积分 s_t=s_0+v_0*t+a*t*t/2
             imuShiftX[imuPointerLast] = imuShiftX[imuPointerBack] + imuVeloX[imuPointerBack] * timeDiff + accX * timeDiff * timeDiff / 2;
             imuShiftY[imuPointerLast] = imuShiftY[imuPointerBack] + imuVeloY[imuPointerBack] * timeDiff + accY * timeDiff * timeDiff / 2;
             imuShiftZ[imuPointerLast] = imuShiftZ[imuPointerBack] + imuVeloZ[imuPointerBack] * timeDiff + accZ * timeDiff * timeDiff / 2;
 
+            // 速度积分 v_t=v_0+a*t
             imuVeloX[imuPointerLast] = imuVeloX[imuPointerBack] + accX * timeDiff;
             imuVeloY[imuPointerLast] = imuVeloY[imuPointerBack] + accY * timeDiff;
             imuVeloZ[imuPointerLast] = imuVeloZ[imuPointerBack] + accZ * timeDiff;
 
+            // 角度积分 _t=_0+w*t
             imuAngularRotationX[imuPointerLast] = imuAngularRotationX[imuPointerBack] + imuAngularVeloX[imuPointerBack] * timeDiff;
             imuAngularRotationY[imuPointerLast] = imuAngularRotationY[imuPointerBack] + imuAngularVeloY[imuPointerBack] * timeDiff;
             imuAngularRotationZ[imuPointerLast] = imuAngularRotationZ[imuPointerBack] + imuAngularVeloZ[imuPointerBack] * timeDiff;
         }
     }
 
+    // imu消息保存到数组，以及一些角度转换
     void imuHandler(const sensor_msgs::Imu::ConstPtr& imuIn)
     {
         double roll, pitch, yaw;
@@ -458,6 +469,7 @@ public:
         AccumulateIMUShiftAndRotation();
     }
 
+    // ROS消息格式转换成pcl点云
     void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg){
 
         cloudHeader = laserCloudMsg->header;
@@ -488,6 +500,7 @@ public:
         newSegmentedCloudInfo = true;
     }
 
+    // 根据小车的位移对点云进行校正
     void adjustDistortion()
     {
         bool halfPassed = false;
@@ -618,12 +631,13 @@ public:
         imuPointerLastIteration = imuPointerLast;
     }
 
-    // 计算平滑度和LOAM不一样
+    // 计算平滑度和LOAM不一样，论文中是深度差的平均值除以自己的模；这里是绝对值
     void calculateSmoothness()
     {
         int cloudSize = segmentedCloud->points.size();
         for (int i = 5; i < cloudSize - 5; i++) {
 
+            // 1。计算相邻10个点深度差的和
             float diffRange = segInfo.segmentedCloudRange[i-5] + segInfo.segmentedCloudRange[i-4]
                             + segInfo.segmentedCloudRange[i-3] + segInfo.segmentedCloudRange[i-2]
                             + segInfo.segmentedCloudRange[i-1] - segInfo.segmentedCloudRange[i] * 10
@@ -631,16 +645,20 @@ public:
                             + segInfo.segmentedCloudRange[i+3] + segInfo.segmentedCloudRange[i+4]
                             + segInfo.segmentedCloudRange[i+5];            
 
+            // 2。取平方
             cloudCurvature[i] = diffRange*diffRange;
 
             cloudNeighborPicked[i] = 0;
             cloudLabel[i] = 0;
 
+            // 3。保存曲率、保存索引
             cloudSmoothness[i].value = cloudCurvature[i];
+            // 这里记下原来的索引，因为后面会按曲率排序，原来的索引就乱了
             cloudSmoothness[i].ind = i;
         }
     }
 
+    // 标记遮挡点（1。和激光束平行的点【上一步labelComponents的时候去除了】；2。可能会被遮挡的点）
     void markOccludedPoints()
     {
         int cloudSize = segmentedCloud->points.size();
@@ -651,6 +669,7 @@ public:
             float depth2 = segInfo.segmentedCloudRange[i+1];
             int columnDiff = std::abs(int(segInfo.segmentedCloudColInd[i+1] - segInfo.segmentedCloudColInd[i]));
 
+            // 1。标记有遮挡的点
             if (columnDiff < 10){
 
                 if (depth1 - depth2 > 0.3){
@@ -673,11 +692,13 @@ public:
             float diff1 = std::abs(float(segInfo.segmentedCloudRange[i-1] - segInfo.segmentedCloudRange[i]));
             float diff2 = std::abs(float(segInfo.segmentedCloudRange[i+1] - segInfo.segmentedCloudRange[i]));
 
+            // 2。标记离群点
             if (diff1 > 0.02 * segInfo.segmentedCloudRange[i] && diff2 > 0.02 * segInfo.segmentedCloudRange[i])
                 cloudNeighborPicked[i] = 1;
         }
     }
 
+    // 特征提取：区里较大的线特征；曲率较小的面特征
     void extractFeatures()
     {
         cornerPointsSharp->clear();
@@ -689,6 +710,7 @@ public:
 
             surfPointsLessFlatScan->clear();
 
+            // 1。6份，每一份分别选择线特征和面特征
             for (int j = 0; j < 6; j++) {
 
                 int sp = (segInfo.startRingIndex[i] * (6 - j)    + segInfo.endRingIndex[i] * j) / 6;
@@ -697,9 +719,11 @@ public:
                 if (sp >= ep)
                     continue;
 
+                // 2。根据曲率排序
                 std::sort(cloudSmoothness.begin()+sp, cloudSmoothness.begin()+ep, by_value());
 
                 int largestPickedNum = 0;
+                // 3。选择线特征（从非地面点中选segmentedCloudGroundFlag[ind] == false）
                 for (int k = ep; k >= sp; k--) {
                     int ind = cloudSmoothness[k].ind;
                     if (cloudNeighborPicked[ind] == 0 &&
@@ -707,18 +731,22 @@ public:
                         segInfo.segmentedCloudGroundFlag[ind] == false) {
                     
                         largestPickedNum++;
+                        // 3.1 最多选2个线特征
                         if (largestPickedNum <= 2) {
                             cloudLabel[ind] = 2;
                             cornerPointsSharp->push_back(segmentedCloud->points[ind]);
                             cornerPointsLessSharp->push_back(segmentedCloud->points[ind]);
+                        // 3.2 平滑一些的线特征20个，用于mapping
                         } else if (largestPickedNum <= 20) {
                             cloudLabel[ind] = 1;
                             cornerPointsLessSharp->push_back(segmentedCloud->points[ind]);
+                        // 3.3 超过20就不要了
                         } else {
                             break;
                         }
 
                         cloudNeighborPicked[ind] = 1;
+                        // 3.4 标记相邻点，防止特征点过于集中
                         for (int l = 1; l <= 5; l++) {
                             int columnDiff = std::abs(int(segInfo.segmentedCloudColInd[ind + l] - segInfo.segmentedCloudColInd[ind + l - 1]));
                             if (columnDiff > 10)
@@ -735,6 +763,7 @@ public:
                 }
 
                 int smallestPickedNum = 0;
+                // 4。选择面特征（从地面点中选segmentedCloudGroundFlag[ind] == true）
                 for (int k = sp; k <= ep; k++) {
                     int ind = cloudSmoothness[k].ind;
                     if (cloudNeighborPicked[ind] == 0 &&
@@ -745,11 +774,13 @@ public:
                         surfPointsFlat->push_back(segmentedCloud->points[ind]);
 
                         smallestPickedNum++;
+                        // 4.1 最多选4个面特征
                         if (smallestPickedNum >= 4) {
                             break;
                         }
 
                         cloudNeighborPicked[ind] = 1;
+                        // 4.2 标记相邻点
                         for (int l = 1; l <= 5; l++) {
 
                             int columnDiff = std::abs(int(segInfo.segmentedCloudColInd[ind + l] - segInfo.segmentedCloudColInd[ind + l - 1]));
@@ -769,6 +800,7 @@ public:
                     }
                 }
 
+                // 5。选择地面面特征和其他点（3、4没有选的点）
                 for (int k = sp; k <= ep; k++) {
                     if (cloudLabel[k] <= 0) {
                         surfPointsLessFlatScan->push_back(segmentedCloud->points[k]);
@@ -776,6 +808,7 @@ public:
                 }
             }
 
+            // 5.1 下采样5中的面特征（5中的点可能很多）
             surfPointsLessFlatScanDS->clear();
             downSizeFilter.setInputCloud(surfPointsLessFlatScan);
             downSizeFilter.filter(*surfPointsLessFlatScanDS);
@@ -1111,24 +1144,30 @@ public:
         }
     }
 
+    // 查找面特征和计算线性相关系数，点距离越远回归系数越低、反之越高
     void findCorrespondingSurfFeatures(int iterCount){
 
         int surfPointsFlatNum = surfPointsFlat->points.size();
 
         for (int i = 0; i < surfPointsFlatNum; i++) {
 
+            // 1。转换到起始点
             TransformToStart(&surfPointsFlat->points[i], &pointSel);
 
             if (iterCount % 5 == 0) {
 
+                // 通过i查找j
                 kdtreeSurfLast->nearestKSearch(pointSel, 1, pointSearchInd, pointSearchSqDis);
+                // j, l, m
                 int closestPointInd = -1, minPointInd2 = -1, minPointInd3 = -1;
 
                 if (pointSearchSqDis[0] < nearestFeatureSearchSqDist) {
                     closestPointInd = pointSearchInd[0];
+                    // 可以近似认为是rowIn，代表第几根激光束
                     int closestPointScan = int(laserCloudSurfLast->points[closestPointInd].intensity);
 
                     float pointSqDis, minPointSqDis2 = nearestFeatureSearchSqDist, minPointSqDis3 = nearestFeatureSearchSqDist;
+                    // 曲率小到大正向找
                     for (int j = closestPointInd + 1; j < surfPointsFlatNum; j++) {
                         if (int(laserCloudSurfLast->points[j].intensity) > closestPointScan + 2.5) {
                             break;
@@ -1141,6 +1180,7 @@ public:
                                      (laserCloudSurfLast->points[j].z - pointSel.z) * 
                                      (laserCloudSurfLast->points[j].z - pointSel.z);
 
+                        // l取j同线束或者下方线束
                         if (int(laserCloudSurfLast->points[j].intensity) <= closestPointScan) {
                             if (pointSqDis < minPointSqDis2) {
                               minPointSqDis2 = pointSqDis;
@@ -1153,6 +1193,7 @@ public:
                             }
                         }
                     }
+                    // 反向找
                     for (int j = closestPointInd - 1; j >= 0; j--) {
                         if (int(laserCloudSurfLast->points[j].intensity) < closestPointScan - 2.5) {
                             break;
@@ -1213,6 +1254,7 @@ public:
                             + pointSel.y * pointSel.y + pointSel.z * pointSel.z));
                 }
 
+                // 3. 计算相关系数
                 if (s > 0.1 && pd2 != 0) {
                     coeff.x = s * pa;
                     coeff.y = s * pb;
@@ -1226,6 +1268,7 @@ public:
         }
     }
 
+    // 通过回归系数求解T
     bool calculateTransformationSurf(int iterCount){
 
         int pointSelNum = laserCloudOri->points.size();
@@ -1283,6 +1326,7 @@ public:
         cv::transpose(matA, matAt);
         matAtA = matAt * matA;
         matAtB = matAt * matB;
+        // 最小二乘求解QR
         cv::solve(matAtA, matAtB, matX, cv::DECOMP_QR);
 
         if (iterCount == 0) {
@@ -1329,6 +1373,7 @@ public:
         float deltaT = sqrt(
                             pow(matX.at<float>(2, 0) * 100, 2));
 
+        // 结果收敛则返回
         if (deltaR < 0.1 && deltaT < 0.1) {
             return false;
         }
@@ -1622,23 +1667,28 @@ public:
         }
     }
 
+    // 先进行面特征匹配得到[t_z,theta_roll,theta_pitch],后进行线特征匹配确定[t_x,t_y,theta_yaw]
     void updateTransformation(){
 
         if (laserCloudCornerLastNum < 10 || laserCloudSurfLastNum < 100)
             return;
 
+        // 1. 面特征匹配
         for (int iterCount1 = 0; iterCount1 < 25; iterCount1++) {
             laserCloudOri->clear();
             coeffSel->clear();
 
+            // 1.1 查找匹配的特征j、l、m
             findCorrespondingSurfFeatures(iterCount1);
 
             if (laserCloudOri->points.size() < 10)
                 continue;
+            // 1.2 计算变换矩阵T
             if (calculateTransformationSurf(iterCount1) == false)
                 break;
         }
 
+        // 2. 线特征匹配
         for (int iterCount2 = 0; iterCount2 < 25; iterCount2++) {
 
             laserCloudOri->clear();
@@ -1789,32 +1839,45 @@ public:
         /**
         	1. Feature Extraction
         */
+        // 1. Feature Extraction 特征提取
+        // 1.1 点云运动补偿
         adjustDistortion();
 
+        // 1.2 计算平滑度
         calculateSmoothness();
 
+        // 1.3 标记遮挡点
         markOccludedPoints();
 
+        // 1.4 提取特征
         extractFeatures();
 
+        // 1.5 发布点云
         publishCloud(); // cloud for visualization
 	
         /**
 		2. Feature Association
         */
+        // 2. Feature Association 特征匹配
         if (!systemInitedLM) {
+            // 2.1 检查系统初始化
             checkSystemInitialization();
             return;
         }
 
+        // 2.2 更新初始猜测位置
         updateInitialGuess();
 
+        // 2.3 特征匹配，输出Transformation
         updateTransformation();
 
+        // 2.4 变换坐标Transformation
         integrateTransformation();
 
+        // 2.5 发布里程计
         publishOdometry();
 
+        // 2.6 发布点云用于建图
         publishCloudsLast(); // cloud to mapOptimization
     }
 };
