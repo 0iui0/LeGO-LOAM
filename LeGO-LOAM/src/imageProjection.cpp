@@ -238,6 +238,7 @@ public:
             horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;
 
             // 计算横坐标
+            // 保证扫描开始的地方角度为0与角度为360的连在一起
             columnIdn = -round((horizonAngle-90.0)/ang_res_x) + Horizon_SCAN/2;
             if (columnIdn >= Horizon_SCAN)
                 columnIdn -= Horizon_SCAN;
