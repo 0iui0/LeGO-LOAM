@@ -94,14 +94,14 @@ private:
     deque<pcl::PointCloud<PointType>::Ptr> surroundingCornerCloudKeyFrames;
     deque<pcl::PointCloud<PointType>::Ptr> surroundingSurfCloudKeyFrames;
     deque<pcl::PointCloud<PointType>::Ptr> surroundingOutlierCloudKeyFrames;
-    
+
     PointType previousRobotPosPoint;
     PointType currentRobotPosPoint;
 
     pcl::PointCloud<PointType>::Ptr cloudKeyPoses3D;
     pcl::PointCloud<PointTypePose>::Ptr cloudKeyPoses6D;
 
-    
+
 
     pcl::PointCloud<PointType>::Ptr surroundingKeyPoses;
     pcl::PointCloud<PointType>::Ptr surroundingKeyPosesDS;
@@ -131,7 +131,7 @@ private:
     pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurroundingKeyPoses;
     pcl::KdTreeFLANN<PointType>::Ptr kdtreeHistoryKeyPoses;
 
-    
+
     pcl::PointCloud<PointType>::Ptr nearHistoryCornerKeyFrameCloud;
     pcl::PointCloud<PointType>::Ptr nearHistoryCornerKeyFrameCloudDS;
     pcl::PointCloud<PointType>::Ptr nearHistorySurfKeyFrameCloud;
@@ -221,7 +221,7 @@ private:
 
 public:
 
-    
+
 
     mapOptimization():
         nh("~")
@@ -274,7 +274,7 @@ public:
         kdtreeHistoryKeyPoses.reset(new pcl::KdTreeFLANN<PointType>());
 
         surroundingKeyPoses.reset(new pcl::PointCloud<PointType>());
-        surroundingKeyPosesDS.reset(new pcl::PointCloud<PointType>());        
+        surroundingKeyPosesDS.reset(new pcl::PointCloud<PointType>());
 
         laserCloudCornerLast.reset(new pcl::PointCloud<PointType>()); // corner feature set from odoOptimization
         laserCloudSurfLast.reset(new pcl::PointCloud<PointType>()); // surf feature set from odoOptimization
@@ -296,7 +296,7 @@ public:
         kdtreeCornerFromMap.reset(new pcl::KdTreeFLANN<PointType>());
         kdtreeSurfFromMap.reset(new pcl::KdTreeFLANN<PointType>());
 
-        
+
         nearHistoryCornerKeyFrameCloud.reset(new pcl::PointCloud<PointType>());
         nearHistoryCornerKeyFrameCloudDS.reset(new pcl::PointCloud<PointType>());
         nearHistorySurfKeyFrameCloud.reset(new pcl::PointCloud<PointType>());
@@ -375,10 +375,10 @@ public:
 
     void transformAssociateToMap()
     {
-        float x1 = cos(transformSum[1]) * (transformBefMapped[3] - transformSum[3]) 
+        float x1 = cos(transformSum[1]) * (transformBefMapped[3] - transformSum[3])
                  - sin(transformSum[1]) * (transformBefMapped[5] - transformSum[5]);
         float y1 = transformBefMapped[4] - transformSum[4];
-        float z1 = sin(transformSum[1]) * (transformBefMapped[3] - transformSum[3]) 
+        float z1 = sin(transformSum[1]) * (transformBefMapped[3] - transformSum[3])
                  + cos(transformSum[1]) * (transformBefMapped[5] - transformSum[5]);
 
         float x2 = x1;
@@ -413,7 +413,7 @@ public:
         float srx = -sbcx*(salx*sblx + calx*cblx*salz*sblz + calx*calz*cblx*cblz)
                   - cbcx*sbcy*(calx*calz*(cbly*sblz - cblz*sblx*sbly)
                   - calx*salz*(cbly*cblz + sblx*sbly*sblz) + cblx*salx*sbly)
-                  - cbcx*cbcy*(calx*salz*(cblz*sbly - cbly*sblx*sblz) 
+                  - cbcx*cbcy*(calx*salz*(cblz*sbly - cbly*sblx*sblz)
                   - calx*calz*(sbly*sblz + cbly*cblz*sblx) + cblx*cbly*salx);
         transformTobeMapped[0] = -asin(srx);
 
@@ -429,9 +429,9 @@ public:
                      + (calz*saly - caly*salx*salz)*(cblz*sbly - cbly*sblx*sblz) + calx*caly*cblx*cbly)
                      - cbcx*sbcy*((saly*salz + caly*calz*salx)*(cbly*sblz - cblz*sblx*sbly)
                      + (calz*saly - caly*salx*salz)*(cbly*cblz + sblx*sbly*sblz) - calx*caly*cblx*sbly);
-        transformTobeMapped[1] = atan2(srycrx / cos(transformTobeMapped[0]), 
+        transformTobeMapped[1] = atan2(srycrx / cos(transformTobeMapped[0]),
                                        crycrx / cos(transformTobeMapped[0]));
-        
+
         float srzcrx = (cbcz*sbcy - cbcy*sbcx*sbcz)*(calx*salz*(cblz*sbly - cbly*sblx*sblz)
                      - calx*calz*(sbly*sblz + cbly*cblz*sblx) + cblx*cbly*salx)
                      - (cbcy*cbcz + sbcx*sbcy*sbcz)*(calx*calz*(cbly*sblz - cblz*sblx*sbly)
@@ -442,7 +442,7 @@ public:
                      - (sbcy*sbcz + cbcy*cbcz*sbcx)*(calx*salz*(cblz*sbly - cbly*sblx*sblz)
                      - calx*calz*(sbly*sblz + cbly*cblz*sblx) + cblx*cbly*salx)
                      + cbcx*cbcz*(salx*sblx + calx*cblx*salz*sblz + calx*calz*cblx*cblz);
-        transformTobeMapped[2] = atan2(srzcrx / cos(transformTobeMapped[0]), 
+        transformTobeMapped[2] = atan2(srzcrx / cos(transformTobeMapped[0]),
                                        crzcrx / cos(transformTobeMapped[0]));
 
         x1 = cos(transformTobeMapped[2]) * transformIncre[3] - sin(transformTobeMapped[2]) * transformIncre[4];
@@ -453,10 +453,10 @@ public:
         y2 = cos(transformTobeMapped[0]) * y1 - sin(transformTobeMapped[0]) * z1;
         z2 = sin(transformTobeMapped[0]) * y1 + cos(transformTobeMapped[0]) * z1;
 
-        transformTobeMapped[3] = transformAftMapped[3] 
+        transformTobeMapped[3] = transformAftMapped[3]
                                - (cos(transformTobeMapped[1]) * x2 + sin(transformTobeMapped[1]) * z2);
         transformTobeMapped[4] = transformAftMapped[4] - y2;
-        transformTobeMapped[5] = transformAftMapped[5] 
+        transformTobeMapped[5] = transformAftMapped[5]
                                - (-sin(transformTobeMapped[1]) * x2 + cos(transformTobeMapped[1]) * z2);
     }
 
@@ -476,9 +476,9 @@ public:
 		        imuPitchLast = imuPitch[imuPointerFront];
 		    } else {
 		        int imuPointerBack = (imuPointerFront + imuQueLength - 1) % imuQueLength;
-		        float ratioFront = (timeLaserOdometry + scanPeriod - imuTime[imuPointerBack]) 
+		        float ratioFront = (timeLaserOdometry + scanPeriod - imuTime[imuPointerBack])
 		                         / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
-		        float ratioBack = (imuTime[imuPointerFront] - timeLaserOdometry - scanPeriod) 
+		        float ratioBack = (imuTime[imuPointerFront] - timeLaserOdometry - scanPeriod)
 		                        / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
 
 		        imuRollLast = imuRoll[imuPointerFront] * ratioFront + imuRoll[imuPointerBack] * ratioBack;
@@ -583,7 +583,7 @@ public:
 
         int cloudSize = cloudIn->points.size();
         cloudOut->resize(cloudSize);
-        
+
         for (int i = 0; i < cloudSize; ++i){
 
             pointFrom = &cloudIn->points[i];
@@ -712,13 +712,13 @@ public:
             PointTypePose thisPose6D = trans2PointTypePose(transformTobeMapped);
             *cloudOut += *transformPointCloud(laserCloudCornerLastDS,  &thisPose6D);
             *cloudOut += *transformPointCloud(laserCloudSurfTotalLast, &thisPose6D);
-            
+
             sensor_msgs::PointCloud2 cloudMsgTemp;
             pcl::toROSMsg(*cloudOut, cloudMsgTemp);
             cloudMsgTemp.header.stamp = ros::Time().fromSec(timeLaserOdometry);
             cloudMsgTemp.header.frame_id = "camera_init";
             pubRegisteredCloud.publish(cloudMsgTemp);
-        } 
+        }
     }
 
     void visualizeGlobalMapThread(){
@@ -738,7 +738,7 @@ public:
         pcl::PointCloud<PointType>::Ptr cornerMapCloudDS(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr surfaceMapCloud(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr surfaceMapCloudDS(new pcl::PointCloud<PointType>());
-        
+
         for(int i = 0; i < cornerCloudKeyFrames.size(); i++) {
             *cornerMapCloud  += *transformPointCloud(cornerCloudKeyFrames[i],   &cloudKeyPoses6D->points[i]);
     	    *surfaceMapCloud += *transformPointCloud(surfCloudKeyFrames[i],     &cloudKeyPoses6D->points[i]);
@@ -786,12 +786,12 @@ public:
 	    // downsample visualized points
         downSizeFilterGlobalMapKeyFrames.setInputCloud(globalMapKeyFrames);
         downSizeFilterGlobalMapKeyFrames.filter(*globalMapKeyFramesDS);
- 
+
         sensor_msgs::PointCloud2 cloudMsgTemp;
         pcl::toROSMsg(*globalMapKeyFramesDS, cloudMsgTemp);
         cloudMsgTemp.header.stamp = ros::Time().fromSec(timeLaserOdometry);
         cloudMsgTemp.header.frame_id = "camera_init";
-        pubLaserCloudSurround.publish(cloudMsgTemp);  
+        pubLaserCloudSurround.publish(cloudMsgTemp);
 
         globalMapKeyPoses->clear();
         globalMapKeyPosesDS->clear();
@@ -811,6 +811,7 @@ public:
         }
     }
 
+    // 回环检测
     bool detectLoopClosure(){
 
         latestSurfKeyFrameCloud->clear();
@@ -823,7 +824,7 @@ public:
         std::vector<float> pointSearchSqDisLoop;
         kdtreeHistoryKeyPoses->setInputCloud(cloudKeyPoses3D);
         kdtreeHistoryKeyPoses->radiusSearch(currentRobotPosPoint, historyKeyframeSearchRadius, pointSearchIndLoop, pointSearchSqDisLoop, 0);
-        
+
         closestHistoryFrameID = -1;
         for (int i = 0; i < pointSearchIndLoop.size(); ++i){
             int id = pointSearchIndLoop[i];
@@ -872,6 +873,7 @@ public:
     }
 
 
+    // ICP匹配回环
     void performLoopClosure(){
 
         if (cloudKeyPoses3D->points.empty() == true)
@@ -912,7 +914,7 @@ public:
             cloudMsgTemp.header.stamp = ros::Time().fromSec(timeLaserOdometry);
             cloudMsgTemp.header.frame_id = "camera_init";
             pubIcpKeyFrames.publish(cloudMsgTemp);
-        }   
+        }
         /*
         	get pose constraint
         	*/
@@ -956,10 +958,12 @@ public:
     void extractSurroundingKeyFrames(){
 
         if (cloudKeyPoses3D->points.empty() == true)
-            return;	
-		
+            return;
+
+        // 如果开启了回环检测
     	if (loopClosureEnableFlag == true){
     	    // only use recent key poses for graph building
+            // 1。只使用最近的关键姿态
                 if (recentCornerCloudKeyFrames.size() < surroundingKeyframeSearchNum){ // queue is not full (the beginning of mapping or a loop is just closed)
                     // clear recent key frames queue
                     recentCornerCloudKeyFrames. clear();
@@ -971,6 +975,7 @@ public:
                         PointTypePose thisTransformation = cloudKeyPoses6D->points[thisKeyInd];
                         updateTransformPointCloudSinCos(&thisTransformation);
                         // extract surrounding map
+                        // 提取过去50个关键帧
                         recentCornerCloudKeyFrames. push_front(transformPointCloud(cornerCloudKeyFrames[thisKeyInd]));
                         recentSurfCloudKeyFrames.   push_front(transformPointCloud(surfCloudKeyFrames[thisKeyInd]));
                         recentOutlierCloudKeyFrames.push_front(transformPointCloud(outlierCloudKeyFrames[thisKeyInd]));
@@ -984,6 +989,7 @@ public:
                         recentSurfCloudKeyFrames.   pop_front();
                         recentOutlierCloudKeyFrames.pop_front();
                         // push latest scan to the end of queue
+                        // 2。弹出队列中时间最久的帧，添加最新的帧到队列
                         latestFrameID = cloudKeyPoses3D->points.size() - 1;
                         PointTypePose thisTransformation = cloudKeyPoses6D->points[latestFrameID];
                         updateTransformPointCloudSinCos(&thisTransformation);
@@ -993,15 +999,18 @@ public:
                     }
                 }
 
+                // 3。拼接点云
                 for (int i = 0; i < recentCornerCloudKeyFrames.size(); ++i){
                     *laserCloudCornerFromMap += *recentCornerCloudKeyFrames[i];
                     *laserCloudSurfFromMap   += *recentSurfCloudKeyFrames[i];
                     *laserCloudSurfFromMap   += *recentOutlierCloudKeyFrames[i];
                 }
     	}else{
+        // 如果没有开启回环检测
             surroundingKeyPoses->clear();
             surroundingKeyPosesDS->clear();
     	    // extract all the nearby key poses and downsample them
+            // 1。查找当前pose 50m内的姿态
     	    kdtreeSurroundingKeyPoses->setInputCloud(cloudKeyPoses3D);
     	    kdtreeSurroundingKeyPoses->radiusSearch(currentRobotPosPoint, (double)surroundingKeyframeSearchRadius, pointSearchInd, pointSearchSqDis, 0);
     	    for (int i = 0; i < pointSearchInd.size(); ++i)
@@ -1009,6 +1018,7 @@ public:
     	    downSizeFilterSurroundingKeyPoses.setInputCloud(surroundingKeyPoses);
     	    downSizeFilterSurroundingKeyPoses.filter(*surroundingKeyPosesDS);
     	    // delete key frames that are not in surrounding region
+            // 2。删除不在周围区域的关键帧
             int numSurroundingPosesDS = surroundingKeyPosesDS->points.size();
             for (int i = 0; i < surroundingExistingKeyPosesID.size(); ++i){
                 bool existingFlag = false;
@@ -1027,6 +1037,7 @@ public:
                 }
             }
     	    // add new key frames that are not in calculated existing key frames
+            // 3。添加关键帧
             for (int i = 0; i < numSurroundingPosesDS; ++i) {
                 bool existingFlag = false;
                 for (auto iter = surroundingExistingKeyPosesID.begin(); iter != surroundingExistingKeyPosesID.end(); ++iter){
@@ -1048,6 +1059,7 @@ public:
                 }
             }
 
+            // 4。拼接点云
             for (int i = 0; i < surroundingExistingKeyPosesID.size(); ++i) {
                 *laserCloudCornerFromMap += *surroundingCornerCloudKeyFrames[i];
                 *laserCloudSurfFromMap   += *surroundingSurfCloudKeyFrames[i];
@@ -1055,10 +1067,12 @@ public:
             }
     	}
         // Downsample the surrounding corner key frames (or map)
+        // 下采样corner特征
         downSizeFilterCorner.setInputCloud(laserCloudCornerFromMap);
         downSizeFilterCorner.filter(*laserCloudCornerFromMapDS);
         laserCloudCornerFromMapDSNum = laserCloudCornerFromMapDS->points.size();
         // Downsample the surrounding surf key frames (or map)
+        // 下采样surf特征
         downSizeFilterSurf.setInputCloud(laserCloudSurfFromMap);
         downSizeFilterSurf.filter(*laserCloudSurfFromMapDS);
         laserCloudSurfFromMapDSNum = laserCloudSurfFromMapDS->points.size();
@@ -1090,15 +1104,19 @@ public:
         laserCloudSurfTotalLastDSNum = laserCloudSurfTotalLastDS->points.size();
     }
 
+    // 角特征优化
     void cornerOptimization(int iterCount){
 
         updatePointAssociateToMapSinCos();
         for (int i = 0; i < laserCloudCornerLastDSNum; i++) {
             pointOri = laserCloudCornerLastDS->points[i];
             pointAssociateToMap(&pointOri, &pointSel);
+            // 1。查找最近5个点
             kdtreeCornerFromMap->nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis);
-            
+
+            // 2。查到的点最小的都小于1m
             if (pointSearchSqDis[4] < 1.0) {
+                // 3。五个点的质心
                 float cx = 0, cy = 0, cz = 0;
                 for (int j = 0; j < 5; j++) {
                     cx += laserCloudCornerFromMapDS->points[pointSearchInd[j]].x;
@@ -1107,6 +1125,7 @@ public:
                 }
                 cx /= 5; cy /= 5;  cz /= 5;
 
+                // 4。协方差
                 float a11 = 0, a12 = 0, a13 = 0, a22 = 0, a23 = 0, a33 = 0;
                 for (int j = 0; j < 5; j++) {
                     float ax = laserCloudCornerFromMapDS->points[pointSearchInd[j]].x - cx;
@@ -1138,27 +1157,28 @@ public:
                     float z2 = cz - 0.1 * matV1.at<float>(0, 2);
 
                     float a012 = sqrt(((x0 - x1)*(y0 - y2) - (x0 - x2)*(y0 - y1))
-                                    * ((x0 - x1)*(y0 - y2) - (x0 - x2)*(y0 - y1)) 
+                                    * ((x0 - x1)*(y0 - y2) - (x0 - x2)*(y0 - y1))
                                     + ((x0 - x1)*(z0 - z2) - (x0 - x2)*(z0 - z1))
-                                    * ((x0 - x1)*(z0 - z2) - (x0 - x2)*(z0 - z1)) 
+                                    * ((x0 - x1)*(z0 - z2) - (x0 - x2)*(z0 - z1))
                                     + ((y0 - y1)*(z0 - z2) - (y0 - y2)*(z0 - z1))
                                     * ((y0 - y1)*(z0 - z2) - (y0 - y2)*(z0 - z1)));
 
                     float l12 = sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) + (z1 - z2)*(z1 - z2));
 
-                    float la = ((y1 - y2)*((x0 - x1)*(y0 - y2) - (x0 - x2)*(y0 - y1)) 
+                    float la = ((y1 - y2)*((x0 - x1)*(y0 - y2) - (x0 - x2)*(y0 - y1))
                               + (z1 - z2)*((x0 - x1)*(z0 - z2) - (x0 - x2)*(z0 - z1))) / a012 / l12;
 
-                    float lb = -((x1 - x2)*((x0 - x1)*(y0 - y2) - (x0 - x2)*(y0 - y1)) 
+                    float lb = -((x1 - x2)*((x0 - x1)*(y0 - y2) - (x0 - x2)*(y0 - y1))
                                - (z1 - z2)*((y0 - y1)*(z0 - z2) - (y0 - y2)*(z0 - z1))) / a012 / l12;
 
-                    float lc = -((x1 - x2)*((x0 - x1)*(z0 - z2) - (x0 - x2)*(z0 - z1)) 
+                    float lc = -((x1 - x2)*((x0 - x1)*(z0 - z2) - (x0 - x2)*(z0 - z1))
                                + (y1 - y2)*((y0 - y1)*(z0 - z2) - (y0 - y2)*(z0 - z1))) / a012 / l12;
 
                     float ld2 = a012 / l12;
 
                     float s = 1 - 0.9 * fabs(ld2);
 
+                    // 5。计算相关系数
                     coeff.x = s * la;
                     coeff.y = s * lb;
                     coeff.z = s * lc;
@@ -1173,11 +1193,12 @@ public:
         }
     }
 
+    // 面特征优化
     void surfOptimization(int iterCount){
         updatePointAssociateToMapSinCos();
         for (int i = 0; i < laserCloudSurfTotalLastDSNum; i++) {
             pointOri = laserCloudSurfTotalLastDS->points[i];
-            pointAssociateToMap(&pointOri, &pointSel); 
+            pointAssociateToMap(&pointOri, &pointSel);
             kdtreeSurfFromMap->nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis);
 
             if (pointSearchSqDis[4] < 1.0) {
@@ -1245,6 +1266,7 @@ public:
         cv::Mat matB(laserCloudSelNum, 1, CV_32F, cv::Scalar::all(0));
         cv::Mat matAtB(6, 1, CV_32F, cv::Scalar::all(0));
         cv::Mat matX(6, 1, CV_32F, cv::Scalar::all(0));
+        // 1。遍历原始点云laserCloudOri
         for (int i = 0; i < laserCloudSelNum; i++) {
             pointOri = laserCloudOri->points[i];
             coeff = coeffSel->points[i];
@@ -1253,9 +1275,9 @@ public:
                       + (-srx*srz*pointOri.x - crz*srx*pointOri.y - crx*pointOri.z) * coeff.y
                       + (crx*cry*srz*pointOri.x + crx*cry*crz*pointOri.y - cry*srx*pointOri.z) * coeff.z;
 
-            float ary = ((cry*srx*srz - crz*sry)*pointOri.x 
+            float ary = ((cry*srx*srz - crz*sry)*pointOri.x
                       + (sry*srz + cry*crz*srx)*pointOri.y + crx*cry*pointOri.z) * coeff.x
-                      + ((-cry*crz - srx*sry*srz)*pointOri.x 
+                      + ((-cry*crz - srx*sry*srz)*pointOri.x
                       + (cry*srz - crz*srx*sry)*pointOri.y - crx*sry*pointOri.z) * coeff.z;
 
             float arz = ((crz*srx*sry - cry*srz)*pointOri.x + (-cry*crz-srx*sry*srz)*pointOri.y)*coeff.x
@@ -1270,6 +1292,7 @@ public:
             matA.at<float>(i, 5) = coeff.z;
             matB.at<float>(i, 0) = -coeff.intensity;
         }
+        // 2。最小二乘求解
         cv::transpose(matA, matAt);
         matAtA = matAt * matA;
         matAtB = matAt * matB;
@@ -1304,6 +1327,7 @@ public:
             matX = matP * matX2;
         }
 
+        // 3。获取Transform
         transformTobeMapped[0] += matX.at<float>(0, 0);
         transformTobeMapped[1] += matX.at<float>(1, 0);
         transformTobeMapped[2] += matX.at<float>(2, 0);
@@ -1326,10 +1350,12 @@ public:
         return false;
     }
 
+    // 通过最小二乘法，添加当前帧到map
     void scan2MapOptimization(){
 
         if (laserCloudCornerFromMapDSNum > 10 && laserCloudSurfFromMapDSNum > 100) {
 
+            // 1。根据降采样后的关键帧点云创建kdtree
             kdtreeCornerFromMap->setInputCloud(laserCloudCornerFromMapDS);
             kdtreeSurfFromMap->setInputCloud(laserCloudSurfFromMapDS);
 
@@ -1338,18 +1364,20 @@ public:
                 laserCloudOri->clear();
                 coeffSel->clear();
 
+                // 2。couner和surf特征质心、协方差、相关系数计算
                 cornerOptimization(iterCount);
                 surfOptimization(iterCount);
 
+                // 3。LM优化，实际上是G-N法
                 if (LMOptimization(iterCount) == true)
-                    break;              
+                    break;
             }
 
             transformUpdate();
         }
     }
 
-
+    // 通过前后两帧进行优化，保存优化后的位姿
     void saveKeyFramesAndFactor(){
 
         currentRobotPosPoint.x = transformAftMapped[3];
@@ -1357,20 +1385,21 @@ public:
         currentRobotPosPoint.z = transformAftMapped[5];
 
         bool saveThisKeyFrame = true;
+        // 距离小于0.3则不保存
         if (sqrt((previousRobotPosPoint.x-currentRobotPosPoint.x)*(previousRobotPosPoint.x-currentRobotPosPoint.x)
                 +(previousRobotPosPoint.y-currentRobotPosPoint.y)*(previousRobotPosPoint.y-currentRobotPosPoint.y)
                 +(previousRobotPosPoint.z-currentRobotPosPoint.z)*(previousRobotPosPoint.z-currentRobotPosPoint.z)) < 0.3){
             saveThisKeyFrame = false;
         }
 
-        
+
 
         if (saveThisKeyFrame == false && !cloudKeyPoses3D->points.empty())
         	return;
 
         previousRobotPosPoint = currentRobotPosPoint;
         /**
-         * update grsam graph
+         * update gtsam graph
          */
         if (cloudKeyPoses3D->points.empty()){
             gtSAMgraph.add(PriorFactor<Pose3>(0, Pose3(Rot3::RzRyRx(transformTobeMapped[2], transformTobeMapped[0], transformTobeMapped[1]),
@@ -1394,7 +1423,7 @@ public:
          */
         isam->update(gtSAMgraph, initialEstimate);
         isam->update();
-        
+
         gtSAMgraph.resize(0);
         initialEstimate.clear();
 
@@ -1453,13 +1482,15 @@ public:
         outlierCloudKeyFrames.push_back(thisOutlierKeyFrame);
     }
 
+    // 回环检测成功，修正位姿
     void correctPoses(){
     	if (aLoopIsClosed == true){
             recentCornerCloudKeyFrames. clear();
             recentSurfCloudKeyFrames.   clear();
             recentOutlierCloudKeyFrames.clear();
             // update key poses
-                int numPoses = isamCurrentEstimate.size();
+            int numPoses = isamCurrentEstimate.size();
+            // isam优化后的位姿替换之前的位姿
             for (int i = 0; i < numPoses; ++i){
             cloudKeyPoses3D->points[i].x = isamCurrentEstimate.at<Pose3>(i).translation().y();
             cloudKeyPoses3D->points[i].y = isamCurrentEstimate.at<Pose3>(i).translation().z();
@@ -1479,9 +1510,9 @@ public:
 
     void clearCloud(){
         laserCloudCornerFromMap->clear();
-        laserCloudSurfFromMap->clear();  
+        laserCloudSurfFromMap->clear();
         laserCloudCornerFromMapDS->clear();
-        laserCloudSurfFromMapDS->clear();   
+        laserCloudSurfFromMapDS->clear();
     }
 
     void run(){
@@ -1499,23 +1530,23 @@ public:
             if (timeLaserOdometry - timeLastProcessing >= mappingProcessInterval) {
 
                 timeLastProcessing = timeLaserOdometry;
-
+                // 1. 转换到map坐标系
                 transformAssociateToMap();
-
+                // 2. 提取周围关键帧
                 extractSurroundingKeyFrames();
-
+                // 3. 下采样当前帧
                 downsampleCurrentScan();
-
+                // 4. scan到map优化
                 scan2MapOptimization();
-
+                // 5. 保存关键帧和因子
                 saveKeyFramesAndFactor();
-
+                // 6. 校正位姿
                 correctPoses();
-
+                // 7. 发布坐标转换
                 publishTF();
-
+                // 8. 发布关键帧和姿态
                 publishKeyPosesAndFrames();
-
+                // 9. 清除点云
                 clearCloud();
             }
         }
